@@ -1,6 +1,9 @@
 import numpy as np
 import csv
 
+''' inspired by:
+    https://maviccprp.github.io/a-support-vector-machine-in-just-a-few-lines-of-python-code/
+'''
 
 
 def get_data(filename, red=None):
@@ -24,9 +27,23 @@ def get_data(filename, red=None):
                 }
 
 
-def main():
-    print(get_data("data/train.csv", 5))
+def svm(samples, labels, epochs=100):
+    w = np.zeros(len(samples[0]))
+    eta = 1
 
+    for epoch in range(1, epochs):
+        for i, x in enumerate(samples):
+            if (labels[i]*np.dot(samples[i], w)) < 1:
+                w = w + eta * ((samples[i] * labels[i]) + (-2 * (1/epoch) * w))
+            else:
+                w = w + eta * (-2 * (1/epoch) * w)
+    
+    return w
+
+
+def main():
+    data = get_data("data/train.csv", 5)
+    print(svm(**data, epochs=10000))
 
 if __name__ == "__main__":
     main()
