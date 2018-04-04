@@ -30,13 +30,13 @@ def main():
     test_data = get_data("data/test.csv")
     end_data = time.time()
 
-    print("time to load data: " + str(end_data - start_data))
+    print("Time to load data: " + str(end_data - start_data))
 
     estimators = 10
     
     start_training = time.time()
-    #model = OneVsRestClassifier(BaggingClassifier(SVC(kernel='linear', C=50, gamma=1), max_samples = 1.0/estimators, n_estimators=estimators, n_jobs=-1))
-    model = RandomForestClassifier(min_samples_leaf=20)
+    model = OneVsRestClassifier(BaggingClassifier(SVC(kernel='linear', C=50, gamma=1), max_samples = 1.0/estimators, n_estimators=estimators, n_jobs=-1))
+    #model = RandomForestClassifier(min_samples_leaf=20)
 
     model.fit(**training_data)
     model.score(**training_data)
@@ -45,8 +45,12 @@ def main():
 
     print("Time to train the model: " + str(end_training - start_training))
 
+    start_prediction = time.time()
     prediction = model.predict(test_data['X'])
-    print(get_accuracy(prediction, test_data['y']))
+    end_prediction = time.time()
+
+    print("Time needed for prediction: " + str(end_prediction - start_prediction))
+    print("Accuracy: " + str(get_accuracy(prediction, test_data['y'])))
 
 
 if __name__ == "__main__":
