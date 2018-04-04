@@ -1,51 +1,54 @@
-import numpy as np
 import csv
-
-''' inspired by:
-    https://maviccprp.github.io/a-support-vector-machine-in-just-a-few-lines-of-python-code/
-'''
-
+import time
+import numpy as np
+from sklearn.svm import SVC
+from sklearn.ensemble import BaggingClassifier, RandomForestClassifier
+from sklearn.multiclass import OneVsRestClassifier
 
 def get_data(filename, red=None):
     with open(filename, 'r') as csvdata:
         rows_raw = csv.reader(csvdata)
         rows_np = np.array(list(rows_raw), dtype=int)
-        
+
         if red is None:
             red = len(rows_np)
+
         print("length of the data set: " + str(red))
 
-        #creating bias array
-        samplesWithBias = np.negative(np.ones((red, len(rows_np[0])), dtype=int))
-
-        #samples with bias
-        samplesWithBias[:,:-1] = rows_np[:red, 1:]
-
         return {
-                "samples": samplesWithBias,
-                "labels": rows_np[:, 0]
+                "X": rows_np[:red, 1:],
+                "y": rows_np[:red, 0]
                 }
 
-
-def svm(samples, labels, epochs=100):
-    w = np.zeros(len(samples[0]))
-    eta = 1
-
-    for epoch in range(1, epochs):
-        for i, x in enumerate(samples):
-            if (labels[i]*np.dot(samples[i], w)) < 1:
-                w = w + eta * ((samples[i] * labels[i]) + (-2 * (1/epoch) * w))
-            else:
-                w = w + eta * (-2 * (1/epoch) * w)
-    
-    return w
+def get_accuracy(predictions, solutions):
+    return str((np.sum(predictions == solutions) / float(len(solutions))) * 100.0).join(' %')
 
 
 def main():
-    data = get_data("data/train.csv", 5)
-    print(svm(**data, epochs=10000))
+    start_data = time.time()
+    training_data = get_data("data/train.csv")
+    test_data = get_data("data/test.csv")
+    end_data = time.time()
+
+    print("time to load data: " + str(end_data - start_data))
+
+    estimators = 10
+    
+    start_training = time.time()
+    #model = OneVsRestClassifier(BaggingClassifier(SVC(kernel='linear', C=50, gamma=1), max_samples = 1.0/estimators, n_estimators=estimators, n_jobs=-1))
+    model = RandomForestClassifier(min_samples_leaf=20)
+
+    model.fit(**training_data)
+    model.score(**training_data)
+
+    end_training = time.time()
+
+    print("Time to train the model: " + str(end_training - start_training))
+
+    prediction = model.predict(test_data['X'])
+    print(get_accuracy(prediction, test_data['y']))
+
 
 if __name__ == "__main__":
     main()
-
 
