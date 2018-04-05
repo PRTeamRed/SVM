@@ -8,7 +8,7 @@ from sklearn.multiclass import OneVsRestClassifier
 def get_data(filename, red=None):
     with open(filename, 'r') as csvdata:
         rows_raw = csv.reader(csvdata)
-        rows_np = np.array(list(rows_raw), dtype=int)
+        rows_np = np.array(list(rows_raw), dtype=int)[:1000]
 
         if red is None:
             red = len(rows_np)
@@ -32,10 +32,16 @@ def main():
 
     print("Time to load data: " + str(end_data - start_data))
 
-    estimators = 10
-    
     start_training = time.time()
-    model = OneVsRestClassifier(BaggingClassifier(SVC(kernel='linear', C=50, gamma=1), max_samples = 1.0/estimators, n_estimators=estimators, n_jobs=-1))
+    model = SVC(kernel='linear')
+    #model = SVC(kernel='rbf', gamma=5)
+    #model = SVC(kernel='sigmoid', coef0=0.5)
+    model.cache_size = 2000
+    model.C = 1 # decrease C if lots of noisy datapoints
+
+
+    estimators = 10
+    #model = OneVsRestClassifier(BaggingClassifier(SVC(kernel='linear', C=50, gamma=1), max_samples = 1.0/estimators, n_estimators=estimators, n_jobs=-1))
     #model = RandomForestClassifier(min_samples_leaf=20)
 
     model.fit(**training_data)
