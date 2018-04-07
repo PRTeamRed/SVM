@@ -121,4 +121,21 @@ def perform_analysis(model, test_set, train_set):
 
 
 if __name__ == "__main__":
-    main(False)
+    main(True)
+
+
+'''
+Without Bagging:
+Time needed for training the model: 191.63s
+Time needed for cross validation: 583.74s
+Accuracy: 95.96% (+/- 0.61%)
+Time needed for prediction: 24.62s
+Accuracy:  96.48571428571428%
+
+With Bagging:
+Time needed for training the model: 37.39s
+Time needed for cross validation: 96.16s
+Accuracy: 92.81% (+/- 0.45%)
+Time needed for prediction: 18.26s
+Accuracy:  93.07142857142857%
+'''
