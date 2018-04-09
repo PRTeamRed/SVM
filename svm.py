@@ -78,6 +78,7 @@ def grid_search(model, train_set):
     '''
         Results:
         RBF: The best parameters are {'C': 10.0, 'gamma': 1e-07} with a score of 0.91
+		Code from: http://scikit-learn.org/stable/auto_examples/svm/plot_rbf_parameters.html
     '''
     C_range = np.logspace(-2, 10, 13)
     gamma_range = np.logspace(-9, 3, 13)
