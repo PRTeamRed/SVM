@@ -30,7 +30,7 @@ def get_accuracy(predictions, solutions):
     return str((np.sum(predictions == solutions) / float(len(solutions))) * 100.0).join(' %')
 
 
-def load_data(train_reduction, test_reduction):
+def load_data(train_reduction=None, test_reduction=None):
     start_data = time.time()
     train_name = "data/train_serialized_" + str(train_reduction)
     test_name = "data/test_serialized_" + str(test_reduction)

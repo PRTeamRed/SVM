@@ -141,13 +141,13 @@ def read_train_data():
         '''
         this function is for reading data from input file
         '''
-        with open("train.csv",'r') as l_csvfile:
+        with open("data/train.csv",'r') as l_csvfile:
                 l_train = csv.reader(l_csvfile)
                 l_train_data = np.array(list(l_train),dtype = int)[0:5000,0:]
         return l_train_data
 	
 def read_test_data():
-	with open("test.csv",'r') as l_csvfile:
+	with open("data/test.csv",'r') as l_csvfile:
 		l_test = csv.reader(l_csvfile)
 		l_test_data = np.array(list(l_test),dtype = int)[0:5000,0:]
 	return l_test_data
