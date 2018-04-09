@@ -19,6 +19,8 @@ There are two implementations of the SVM: svm.py, which uses libs that provide a
 
 **svm_v_01.py** is still under construction and is **NOT** working correctly.
 
+** svm_v_01.py ** is now woring for linear and polynomial kernel. 
+
 To run them either call: 
 ```
 python svm.py
