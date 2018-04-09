@@ -17,6 +17,8 @@ To adapt the two sets just change the two parameters in line 95 of the svm.py fi
 ### Run
 There are two implementations of the SVM: svm.py, which uses libs that provide an implementation of SVM and svm_v_01.py, which is our own implementation of SVM that just uses libs for the calculations.
 
+**svm_v_01.py** is still under construction and is **NOT** working correctly.
+
 To run them either call: 
 ```
 python svm.py
