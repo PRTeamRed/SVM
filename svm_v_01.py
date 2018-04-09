@@ -52,7 +52,7 @@ import matplotlib.pyplot as plt
 '''
 
 class svm:
-        def __init__(self,kernel='linear',C=None,sigma=0.05,threshold=0.1,degree=1.):
+        def __init__(self,kernel='linear',C=None,sigma=1.0,threshold=0.0,degree=1.0):
                 '''
                      This is constructor which will get values of different varaibales---
                      ---- kernel    : Type of Kernel
@@ -74,8 +74,15 @@ class svm:
                 --- Polynomial
                 --- RBF   
                 '''
-                self.k = (1. + 1./self.sigma*np.dot(l_x,l_x.T))**self.degree
-               # self.k = np.dot(l_x,l_x.T)
+                self.k = np.dot(l_x,l_x.T).astype(float)
+                if self.kernel=='linear':
+                        self.k = (1. + 1./self.sigma*self.k)**self.degree
+               # 
+                elif self.kernel=='rbf':
+                        self.xsquared = (np.diag(self.k)*np.ones((1,self.n))).T
+                        b = np.ones((self.n,1))
+                        self.k -= 0.5*(np.dot(self.xsquared,b.T) + np.dot(b,self.xsquared.T))
+                        self.k = np.exp(self.k/(2.*self.sigma**2))	       
                 
         def learn_module(self,l_x,l_target):
                 '''
@@ -98,6 +105,7 @@ class svm:
                 
                 #  Quadratic Solver
                 
+                cvx.solvers.options['show_progress'] = False
                 sol = cvx.solvers.qp(cvx.matrix(P),cvx.matrix(q),cvx.matrix(G),cvx.matrix(h), cvx.matrix(A), cvx.matrix(b))
                                 
                 l_lamda = np.array(sol['x'])   # This holds lamda value
@@ -105,9 +113,10 @@ class svm:
                 '''
                 find support vector
                 '''
-                
+
                 self.sv = np.where(l_lamda>self.threshold)[0]
-                
+                #print(self.sv)
+                #print(l_lamda)
                 self.nsupport = np.shape(self.sv)[0]
                 self.l_x = l_x[self.sv,:]
                 self.l_target = l_target[self.sv,:]
@@ -119,19 +128,33 @@ class svm:
                 for i in range(self.nsupport):
                         self.b -= np.sum(self.l_lamda*self.l_target*np.reshape(self.k[self.sv[i],self.sv],(self.nsupport,1)))
                 self.b = self.b/self.nsupport
-                
-                
+		
                 #print(self.b)
+                #print(self.nsupport)
 		
 	# building classifier -- This is neede when recalculate the class for test data with only support vector
         
-        def classifier(Y,soft=False):
-                k = (1. + 1./self.sigma*np.dot(Y,self.l_x.T))**self.degree
-                self.y = np.zeros((np.shape(Y)[0],1))
-                for j in range(np.shape(Y)[0]):
-                        for i in range(self.nsupport):
-                                self.y[j] += self.lambdas[i]*self.l_target[i]*k[j,i]
-                        self.y[j] += self.b
+        def classifier(self,Y,soft=False):
+                k=np.dot(Y,self.l_x.T)
+                if self.kernel=='linear':
+                        k = (1. + 1./self.sigma*k)**self.degree
+                        self.y = np.zeros((np.shape(Y)[0],1))
+                        for j in range(np.shape(Y)[0]):
+                                for i in range(self.nsupport):
+                                        self.y[j] += self.l_lamda[i]*self.l_target[i]*k[j,i]
+                                self.y[j] += self.b
+                elif self.kernel=='rbf':
+                        c = (1./self.sigma * np.sum(Y**2,axis=1)*np.ones((1,np.shape(Y)[0]))).T
+                        c = np.dot(c,np.ones((1,np.shape(k)[1])))
+                        aa = np.dot(self.xsquared[self.sv],np.ones((1,np.shape(k)[0]))).T
+                        k = k - 0.5*c - 0.5*aa
+                        k = np.exp(k/(2.*self.sigma**2))
+
+                        self.y = np.zeros((np.shape(Y)[0],1))
+                        for j in range(np.shape(Y)[0]):
+                                for i in range(self.nsupport):
+                                        self.y[j] += self.l_lamda[i]*self.l_target[i]*k[j,i]
+                                self.y[j] += self.b			
                 if soft:
                         return self.y
                 else:
@@ -141,103 +164,65 @@ def read_train_data():
         '''
         this function is for reading data from input file
         '''
-        with open("data/train.csv",'r') as l_csvfile:
+        with open("train.csv",'r') as l_csvfile:
                 l_train = csv.reader(l_csvfile)
-                l_train_data = np.array(list(l_train),dtype = int)[0:5000,0:]
+                l_train_data = np.array(list(l_train),dtype = int)[:,0:]
         return l_train_data
 	
 def read_test_data():
-	with open("data/test.csv",'r') as l_csvfile:
+	with open("test.csv",'r') as l_csvfile:
 		l_test = csv.reader(l_csvfile)
-		l_test_data = np.array(list(l_test),dtype = int)[0:5000,0:]
+		l_test_data = np.array(list(l_test),dtype = int)[:,0:]
 	return l_test_data
 
 
 def prepare_target(l_target,l_data,l_class):
-	l = []
-	l_no_class = np.where(l_data[:,0]==l_class)
-	l_total = np.shape(l_no_class)[1]
-	if l_total != 0:
-		l_target[0:l_total,0] = 1
-		
-		#l.append('Y')
-		
-	return l_target	
+	l_target[np.where(l_data[:,0]==l_class)]=1
+	return l_target
 	
 if __name__ == "__main__":
+	
 	l_data = read_train_data()
-	l_target = -np.ones((5000,1))
-	obj_svm0 = svm()
-	obj_svm1 = svm()
-	obj_svm2 = svm()
-	obj_svm3 = svm()
-	obj_svm4 = svm()
-	obj_svm5 = svm()
-	obj_svm6 = svm()
-	obj_svm7 = svm()
-	obj_svm8 = svm()
-	obj_svm9 = svm()
-	
-	# learn svm0 classifier
-	l = prepare_target(l_target,l_data,0)
-	#if l[0] == 'Y':
-	obj_svm0.learn_module(l_data[:,1:],l)
-	
-	# learn svm1 classifier
-	l = prepare_target(l_target,l_data,1)
-	#if l[0] == 'Y':
-	obj_svm1.learn_module(l_data[:,1:],l)
-	
-	# learn svm2 classifier
-	l = prepare_target(l_target,l_data,2)
-	#if l[0] == 'Y':
-	obj_svm2.learn_module(l_data[:,1:],l)
-	
-	# learn svm3 classifier
-	l = prepare_target(l_target,l_data,3)
-	#if l[0] == 'Y':
-	obj_svm3.learn_module(l_data[:,1:],l)
-	
-	# learn svm4 classifier
-	l = prepare_target(l_target,l_data,4)
-	#if l[0] == 'Y':
-	obj_svm4.learn_module(l_data[:,1:],l)
-	
-	# learn svm5 classifier
-	l = prepare_target(l_target,l_data,5)
-	#if l[0] == 'Y':
-	obj_svm5.learn_module(l_data[:,1:],l)
-	
-	# learn svm6 classifier
-	l = prepare_target(l_target,l_data,6)
-	#if l[0] == 'Y':
-	obj_svm6.learn_module(l_data[:,1:],l)
-	
-	# learn svm7 classifier
-	l = prepare_target(l_target,l_data,7)
-	#if l[0] == 'Y':
-	obj_svm7.learn_module(l_data[:,1:],l)
-	
-	# learn svm8 classifier
-	l = prepare_target(l_target,l_data,8)
-	#if l[0] == 'Y':
-	obj_svm8.learn_module(l_data[:,1:],l)
-	
-	# learn svm9 classifier
-	l = prepare_target(l_target,l_data,9)
-	#if l[0] == 'Y':
-	obj_svm9.learn_module(l_data[:,1:],l)	
-	
 	l_test_data = read_test_data()
-	output0 = svm0.classifier(l_test_data,soft=False)
-	output1 = svm1.classifier(l_test_data,soft=False)
-	output2 = svm2.classifier(l_test_data,soft=False)
-	output3 = svm3.classifier(l_test_data,soft=False)
-	output4 = svm4.classifier(l_test_data,soft=False)
-	output5 = svm5.classifier(l_test_data,soft=False)
-	output6 = svm6.classifier(l_test_data,soft=False)
-	output7 = svm7.classifier(l_test_data,soft=False)
-	output8 = svm8.classifier(l_test_data,soft=False)
-	output9 = svm9.classifier(l_test_data,soft=False)
-
 	
+	l_target = -np.ones((len(l_data),1))   # setting target array elements to -1
+	output  = np.zeros((np.shape(l_test_data)[0],10)) # setting output array to zero.
+	
+	
+	#print(l_data)
+	#print(l_test_data)
+	#print(l_target)
+	#print(output)
+	
+	
+	for l_class in range(10):
+		obj_svm = svm(kernel='linear',degree=1.0,C=0.1)
+		l = prepare_target(l_target,l_data,l_class)
+		obj_svm.learn_module(l_data[:,1:],l)
+		#print(obj_svm.classifier(l_test_data))
+		output[:,l_class] = obj_svm.classifier(l_test_data[:,1:],soft=True).T
+		
+	# Make a decision about which class
+	# Pick the one with the largest margin
+	bestclass = np.argmax(output,axis=1)
+	#print(bestclass)
+	#print(output)
+	
+	err = np.where(bestclass!=l_test_data[:,0])[0]
+	print ("% of accuracy (linear,C=0.1) : ",100.0-(len(err)/np.shape(l_test_data[:,0])[0])*100)
+	'''
+	for l_class in range(10):
+		obj_svm = svm(kernel='rbf',degree=1.0,C=0.1)
+		l = prepare_target(l_target,l_data,l_class)
+		obj_svm.learn_module(l_data[:,1:],l)
+		#print(obj_svm.classifier(l_test_data))
+		output[:,l_class] = obj_svm.classifier(l_test_data[:,1:],soft=True).T
+	# Make a decision about which class
+	# Pick the one with the largest margin
+	bestclass = np.argmax(output,axis=1)
+	#print(bestclass)
+	#print(output)
+	
+	err = np.where(bestclass!=l_test_data[:,0])[0]
+	print ("% of accuracy (rbf,C=0.1) : ",100.0-(len(err)/np.shape(l_test_data[:,0])[0])*100)
+	'''
