@@ -1,6 +1,6 @@
 #########################################################################
 ##
-##    Name: svm.py
+##    Name: svm_v_01.py
 ##    Description : This program implements support vector machine
 ##                  to classify unkown vectors based on learned machine
 ##                  algorithm with training feature vectors class.
